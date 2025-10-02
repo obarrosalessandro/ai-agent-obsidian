@@ -15,7 +15,7 @@ A powerful Obsidian plugin that connects with AI agents via webhooks for an inte
 
 1. Open Obsidian Settings
 2. Go to "Community plugins"
-3. Search for "Chat AI Agent"
+3. Search for "AI Agent for Obsidian"
 4. Install and enable the plugin
 
 ## Configuration
@@ -42,18 +42,19 @@ A powerful Obsidian plugin that connects with AI agents via webhooks for an inte
 
 ### Process Existing Notes
 
-- Type `#NoteName` to send the entire content of a note to the AI for processing
-- Example: `#MyResearchNotes`
+- Use the paperclip icon to attach the currently active note to your message
+- Right-click on any note in the file explorer and select "Send all notes in this folder to n8n" to process multiple files at once
 
-### Attach Active Note
+### Attach Active Note or Selected Text
 
-- Click the paperclip icon to attach the currently active note
+- Click the paperclip icon to attach the currently active note or selected text
+- Select "Attach active note" or "Attach selected text" from the menu
 - The content will be pre-filled in the input area with instructions placeholder
 
 ### Attach Selected Text
 
 - Select text in any note
-- Right-click and choose "Send to Chat AI Agent" from context menu
+- Right-click and choose "Send to AI Agent for Obsidian" from context menu
 
 ### Export Responses
 
