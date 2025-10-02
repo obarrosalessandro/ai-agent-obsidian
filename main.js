@@ -81,10 +81,12 @@ function simpleDecrypt(encryptedData, password) {
  * - Only HTTPS protocol allowed
  * - Blocks private IP addresses
  * - Validates URL format
+ * - Checks if domain is in allowed list (if specified)
  * @param {string} url - The URL to validate
+ * @param {string} allowedDomains - Comma-separated list of allowed domains
  * @returns {object} - { valid: boolean, error: string }
  */
-function isValidWebhookUrl(url) {
+function isValidWebhookUrl(url, allowedDomains = '') {
     try {
         const parsedUrl = new URL(url);
         
@@ -97,6 +99,24 @@ function isValidWebhookUrl(url) {
         const hostname = parsedUrl.hostname.toLowerCase();
         if (isPrivateIP(hostname)) {
             return { valid: false, error: 'Acesso a IPs privados ou locais não é permitido' };
+        }
+        
+        // Verificar se domínios permitidos estão definidos e se o hostname está na lista
+        if (allowedDomains && allowedDomains.trim() !== '') {
+            const allowedDomainsList = allowedDomains.split(',').map(domain => domain.trim().toLowerCase()).filter(domain => domain);
+            
+            // Verificar se o hostname ou um subdomínio corresponde a algum domínio permitido
+            const isDomainAllowed = allowedDomainsList.some(allowedDomain => {
+                // Verificar correspondência exata ou subdomínio (ex: hook.us.make.com corresponde a make.com)
+                return hostname === allowedDomain || 
+                       hostname.endsWith('.' + allowedDomain) || 
+                       // Para domínios como hook.us.make.com, verificar se é um subdomínio de make.com
+                       (allowedDomain.includes('.') && hostname.endsWith('.' + allowedDomain) && hostname.length > allowedDomain.length);
+            });
+            
+            if (!isDomainAllowed) {
+                return { valid: false, error: `O domínio '${hostname}' não está na lista de domínios permitidos` };
+            }
         }
         
         return { valid: true };
@@ -158,7 +178,11 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
 const DEFAULT_SETTINGS = {
     n8nWebhookUrl: '', // Armazenado de forma criptografada
     webhookToken: '', // Token para validação de segurança na webhook - armazenado de forma criptografada
-    defaultSavePath: 'AI Agent for Obsidian Notes' // New default path
+    defaultSavePath: 'AI Agent for Obsidian Notes', // New default path
+    allowedDomains: 'hooks.zapier.com,hook.us.make.com,hook.eu.make.com,my.pabbly.com', // Domains allowed for webhooks
+    authType: 'bearer', // Tipo de autenticação: 'bearer', 'header', 'authorization', 'maketoken', 'query', 'none'
+    customHeaderName: 'X-Webhook-Token', // Nome do cabeçalho personalizado quando usando o tipo 'header'
+    authScheme: 'Bearer' // Esquema de autenticação para o tipo 'authorization' (ex: Bearer, Token, Basic, ApiKey)
 };
 // Classe para a aba de configurações do plugin
 class AIAgentObsidianSettingTab extends obsidian.PluginSettingTab {
@@ -178,7 +202,7 @@ class AIAgentObsidianSettingTab extends obsidian.PluginSettingTab {
             .setValue(this.plugin.settings.n8nWebhookUrl)
             .onChange((value) => __awaiter(this, void 0, void 0, function* () {
                 // Validar URL antes de salvar
-                const validation = isValidWebhookUrl(value);
+                const validation = isValidWebhookUrl(value, this.plugin.settings.allowedDomains);
                 if (validation.valid || value === '') {
                     this.plugin.settings.n8nWebhookUrl = value;
                     yield this.plugin.saveSettings();
@@ -216,53 +240,168 @@ class AIAgentObsidianSettingTab extends obsidian.PluginSettingTab {
                 .setPlaceholder('Ex: AI Agent for Obsidian Notes')
                 .setValue(this.plugin.settings.defaultSavePath)
                 .setDisabled(true)); // Disable direct text input, show selected path
+
+        new obsidian.Setting(containerEl)
+            .setName('Domínios permitidos')
+            .setDesc('Lista de domínios separados por vírgula para os quais o plugin pode enviar requisições (ex: hooks.zapier.com,hook.us.make.com). Deixe vazio para permitir todos os domínios (menos IPs privados).')
+            .addText(text => text
+            .setPlaceholder('hooks.zapier.com,hook.us.make.com,hook.eu.make.com,my.pabbly.com')
+            .setValue(this.plugin.settings.allowedDomains)
+            .onChange((value) => __awaiter(this, void 0, void 0, function* () {
+                this.plugin.settings.allowedDomains = value;
+                yield this.plugin.saveSettings();
+            })));
+
+        // Armazenar referência para atualização dinâmica
+        new obsidian.Setting(containerEl)
+            .setName('Tipo de autenticação')
+            .setDesc('Método de envio do token de segurança para o webhook')
+            .addDropdown(dropdown => dropdown
+            .addOption('bearer', 'Bearer Token (padrão para n8n)')
+            .addOption('header', 'Cabeçalho personalizado')
+            .addOption('authorization', 'Authorization header com esquema')
+            .addOption('maketoken', 'Make.com (Token no body)')
+            .addOption('query', 'Parâmetro de query (?token=<token>)')
+            .addOption('none', 'Nenhum (sem token de autenticação)')
+            .setValue(this.plugin.settings.authType)
+            .onChange((value) => __awaiter(this, void 0, void 0, function* () {
+                this.plugin.settings.authType = value;
+                yield this.plugin.saveSettings();
+                this.display(); // Re-render the settings tab to show/hide additional fields
+            })));
+
+        // Mostrar campos adicionais conforme o tipo de autenticação
+        if (this.plugin.settings.authType === 'header') {
+            new obsidian.Setting(containerEl)
+                .setName('Nome do cabeçalho personalizado')
+                .setDesc('Nome do cabeçalho HTTP para envio do token quando usando autenticação por cabeçalho personalizado')
+                .addText(text => text
+                .setPlaceholder('X-Webhook-Token')
+                .setValue(this.plugin.settings.customHeaderName)
+                .onChange((value) => __awaiter(this, void 0, void 0, function* () {
+                    this.plugin.settings.customHeaderName = value;
+                    yield this.plugin.saveSettings();
+                })));
+        }
+        
+        if (this.plugin.settings.authType === 'authorization') {
+            new obsidian.Setting(containerEl)
+                .setName('Esquema de autenticação')
+                .setDesc('Esquema de autorização para o header Authorization (ex: Bearer, Token, Basic, ApiKey)')
+                .addText(text => text
+                .setPlaceholder('Bearer')
+                .setValue(this.plugin.settings.authScheme)
+                .onChange((value) => __awaiter(this, void 0, void 0, function* () {
+                    this.plugin.settings.authScheme = value;
+                    yield this.plugin.saveSettings();
+                })));
+        }
+        
+        if (this.plugin.settings.authType === 'maketoken') {
+            const descEl = document.createDocumentFragment();
+            descEl.append(
+                "O token será enviado como parte do corpo da requisição no campo 'token'. ",
+                descEl.createEl('strong', { text: 'Esta opção é específica para Make.com.' })
+            );
+            
+            new obsidian.Setting(containerEl)
+                .setName('Autenticação para Make.com')
+                .setDesc(descEl);
+        }
     }
 }
 
 function callN8nWebhook(payload, webhookUrl, plugin) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!webhookUrl) {
-            new obsidian.Notice('URL do Webhook do n8n não configurada nas configurações do plugin.');
+            new obsidian.Notice('URL do Webhook não configurada nas configurações do plugin.');
             return Promise.reject('URL do Webhook não configurada.');
         }
         
         // Validar URL antes de fazer a requisição para prevenir SSRF
-        const validation = isValidWebhookUrl(webhookUrl);
+        const validation = isValidWebhookUrl(webhookUrl, plugin.settings.allowedDomains);
         if (!validation.valid) {
             console.error('URL de webhook inválida:', validation.error);
             return Promise.reject(`URL de webhook inválida: ${validation.error}`);
         }
         
         try {
-            // Preparar cabeçalhos com o token de segurança
+            // Preparar cabeçalhos com o token de segurança baseado no tipo de autenticação
             const headers = {
                 'Content-Type': 'application/json',
             };
             
-            // Adicionar token de segurança se estiver configurado
+            // Adicionar token de segurança se estiver configurado, de acordo com o tipo de autenticação
+            let modifiedPayload = { ...payload }; // Cópia do payload para modificação
+            
             if (plugin && plugin.settings.webhookToken) {
-                headers['Authorization'] = `Bearer ${plugin.settings.webhookToken}`;
-                // Alternativamente, poderia usar um cabeçalho personalizado
-                // headers['X-Webhook-Token'] = plugin.settings.webhookToken;
+                switch (plugin.settings.authType) {
+                    case 'bearer':
+                        headers['Authorization'] = `Bearer ${plugin.settings.webhookToken}`;
+                        console.log('Enviando token como Bearer:', `Bearer ${plugin.settings.webhookToken.substring(0, 4)}...`); // Apenas para debug
+                        break;
+                    case 'header':
+                        // Usar o nome do cabeçalho personalizado
+                        const headerName = plugin.settings.customHeaderName || 'X-Webhook-Token';
+                        headers[headerName] = plugin.settings.webhookToken;
+                        console.log(`Enviando token no cabeçalho ${headerName}:`, `${plugin.settings.webhookToken.substring(0, 4)}...`); // Apenas para debug
+                        break;
+                    case 'authorization':
+                        // Para serviços que esperam um esquema específico no header Authorization
+                        // Usar o esquema configurado seguido pelo token
+                        headers['Authorization'] = `${plugin.settings.authScheme} ${plugin.settings.webhookToken}`;
+                        console.log(`Enviando token no header Authorization com esquema ${plugin.settings.authScheme}:`, `${plugin.settings.webhookToken.substring(0, 4)}...`); // Apenas para debug
+                        break;
+                    case 'maketoken':
+                        // Para Make.com: adicionando o token como parte do payload
+                        modifiedPayload.token = plugin.settings.webhookToken;
+                        console.log(`Enviando token no body para Make.com:`, `${plugin.settings.webhookToken.substring(0, 4)}...`); // Apenas para debug
+                        break;
+
+                    case 'query':
+                        // O token será adicionado como parâmetro de query posteriormente
+                        console.log('Token será enviado como parâmetro de query');
+                        break;
+                    case 'none':
+                        // Não adiciona token de autenticação
+                        console.log('Nenhuma autenticação será enviada');
+                        break;
+                    default:
+                        headers['Authorization'] = `Bearer ${plugin.settings.webhookToken}`;
+                        console.log('Enviando token como Bearer (padrão):', `Bearer ${plugin.settings.webhookToken.substring(0, 4)}...`); // Apenas para debug
+                        break;
+                }
             }
             
-            const response = yield fetch(webhookUrl, {
+            // Se o tipo de autenticação for query, adicionar o token como parâmetro de query
+            let urlToSend = webhookUrl;
+            if (plugin.settings.authType === 'query' && plugin.settings.webhookToken) {
+                const url = new URL(webhookUrl);
+                url.searchParams.set('token', plugin.settings.webhookToken);
+                urlToSend = url.toString();
+                console.log('URL com token de query:', urlToSend);
+            }
+            
+            console.log('Requisição sendo enviada para:', urlToSend);
+            console.log('Cabeçalhos da requisição:', headers);
+            
+            const response = yield fetch(urlToSend, {
                 method: 'POST',
                 headers: headers,
-                body: JSON.stringify(payload),
+                body: JSON.stringify(modifiedPayload),
             });
             if (!response.ok) {
                 const errorText = yield response.text();
-                console.error('Erro do Webhook n8n:', errorText);
+                console.error('Erro do Webhook:', errorText);
                 // Return a more detailed error message
-                return Promise.reject(`Erro ao chamar o webhook: ${response.status} - ${errorText}. Verifique o status do seu workflow no n8n.`);
+                return Promise.reject(`Erro ao chamar o webhook: ${response.status} - ${errorText}. Verifique o status do seu workflow.`);
             }
-            // We expect the n8n workflow to respond with the plain text answer from the AI
+            // We expect the workflow to respond with the plain text answer from the AI
             const responseText = yield response.text();
             return responseText;
         }
         catch (error) {
-            console.error('Erro ao chamar o webhook do n8n:', error);
+            console.error('Erro ao chamar o webhook:', error);
             let errorMessage = 'Erro de conexão ao tentar chamar o webhook. Verifique a URL, sua conexão ou o console para mais detalhes.';
             if (error instanceof Error) {
                 errorMessage = `Erro de conexão: ${error.message}. Verifique a URL do Webhook e sua conexão.`;
@@ -434,7 +573,37 @@ class AIAgentObsidianView extends obsidian.ItemView {
             // Attach the note suggester
             new NoteSuggester(this.app, this.textInput);
 
-            // Add context menu listener for saving selected text
+            // Listener to detect text selection in chat container
+            this.chatContainer.addEventListener('mouseup', () => {
+                setTimeout(() => {
+                    const selection = window.getSelection();
+                    if (selection && selection.toString().trim().length > 0) {
+                        const selectedText = selection.toString();
+                        // Check if selection is within the chat container
+                        const range = selection.getRangeAt(0);
+                        const selectedElement = range.commonAncestorContainer;
+                        const chatMessageElement = selectedElement.closest('.chat-message');
+                        
+                        if (chatMessageElement) {
+                            // Create a temporary menu and show it at cursor position
+                            const menu = new obsidian.Menu();
+                            menu.addItem((item) => item
+                                .setTitle('Salvar seleção como nota')
+                                .setIcon('save')
+                                .onClick(() => {
+                                    menu.hide();
+                                    this.saveSelectionAsNote(selectedText);
+                                }));
+                            
+                            // Position the menu near the selection
+                            const rect = range.getBoundingClientRect();
+                            menu.showAtPosition({ x: rect.left, y: rect.top });
+                        }
+                    }
+                }, 10); // Small delay to ensure selection is complete
+            });
+            
+            // Also keep the right-click context menu as a fallback
             this.chatContainer.addEventListener('contextmenu', (event) => {
                 const selection = window.getSelection();
                 if (selection && selection.toString().length > 0) {
@@ -795,7 +964,7 @@ class AIAgentObsidianPlugin extends obsidian.Plugin {
     }
     onunload() {
         console.log('Descarregando plugin AI Agent for Obsidian.');
-        this.app.workspace.detachLeavesOfType(CHAT_AI_AGENT_VIEW_TYPE);
+        this.app.workspace.detachLeavesOfType(AI_AGENT_OBSIDIAN_VIEW_TYPE);
     }
     loadSettings() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -830,20 +999,21 @@ class AIAgentObsidianPlugin extends obsidian.Plugin {
             if (this.settings.webhookToken) {
                 encryptedData.webhookToken = simpleEncrypt(this.settings.webhookToken, this.app.vault.getName());
             }
+            // Os campos allowedDomains, authType, customHeaderName e authScheme não precisam ser criptografados pois não contêm informação sensível
             
             yield this.saveData(encryptedData);
         });
     }
     activateView() {
         return __awaiter(this, void 0, void 0, function* () {
-            this.app.workspace.detachLeavesOfType(CHAT_AI_AGENT_VIEW_TYPE);
+            this.app.workspace.detachLeavesOfType(AI_AGENT_OBSIDIAN_VIEW_TYPE);
             const rightLeaf = this.app.workspace.getRightLeaf(false);
             if (rightLeaf) {
                 yield rightLeaf.setViewState({
-                    type: CHAT_AI_AGENT_VIEW_TYPE,
+                    type: AI_AGENT_OBSIDIAN_VIEW_TYPE,
                     active: true,
                 });
-                this.app.workspace.revealLeaf(this.app.workspace.getLeavesOfType(CHAT_AI_AGENT_VIEW_TYPE)[0]);
+                this.app.workspace.revealLeaf(this.app.workspace.getLeavesOfType(AI_AGENT_OBSIDIAN_VIEW_TYPE)[0]);
             }
         });
     }

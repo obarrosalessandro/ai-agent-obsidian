@@ -1,7 +1,11 @@
 {
-  "n8nWebhookUrl": "https://webhooks.flowscopy.com/wh/obsidin-agent",
-  "webhookToken": "v7T*f1FC8eI^W1yRx^2RBA2XX8EcfZ",
+  "n8nWebhookUrl": "BRURAwdIRk4aBAcbGx0CEkMHCRwDAQoOHRhLEBsfRhYFTgoRBxsNCANMBBQRHB0=",
+  "webhookToken": "G1YxWRJDLyJVBCwtI0MQMxU/VyE2M1s5NVkgEBIo",
   "defaultSavePath": "!Inbox",
+  "allowedDomains": "webhooks.flowscopy.com,hook.us1.make.com,hooks.zapier.com",
+  "authType": "bearer",
+  "customHeaderName": "X-Webhook-Token",
+  "authScheme": "Bearer",
   "apiKey": "AIzaSyCyMv7nPsMl_RcJCAuNDGMMNwiVwdNOdik",
   "model": "gemini-1.5-flash"
 }
