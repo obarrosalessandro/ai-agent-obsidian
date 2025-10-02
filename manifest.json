@@ -1,0 +1,12 @@
+{
+  "id": "ai-agent-obsidian",
+  "name": "AI Agent for Obsidian",
+  "version": "1.0.0",
+  "minAppVersion": "1.6.0",
+  "description": "Connect with AI agents via webhooks for an intelligent chat experience within Obsidian. Features secure communication, note integration, and data encryption.",
+  "author": "Obsidian",
+  "authorUrl": "",
+  "fundingUrl": "",
+  "isDesktopOnly": false,
+  "css": "styles.css"
+}

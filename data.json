@@ -1,0 +1,7 @@
+{
+  "n8nWebhookUrl": "https://webhooks.flowscopy.com/wh/obsidin-agent",
+  "webhookToken": "v7T*f1FC8eI^W1yRx^2RBA2XX8EcfZ",
+  "defaultSavePath": "!Inbox",
+  "apiKey": "AIzaSyCyMv7nPsMl_RcJCAuNDGMMNwiVwdNOdik",
+  "model": "gemini-1.5-flash"
+}
