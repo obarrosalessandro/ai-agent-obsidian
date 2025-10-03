@@ -1,90 +1,104 @@
-# AI Agent for Obsidian
+# AI Agent para Obsidian
 
-A powerful Obsidian plugin that connects with AI agents via webhooks for an intelligent chat experience within Obsidian.
+Plugin poderoso do Obsidian que conecta com agentes de IA através de webhooks para uma experiência de chat inteligente dentro do Obsidian.
 
-## Features
+## Recursos
 
-- **AI-Powered Chat**: Seamlessly integrate with AI services through customizable webhooks
-- **Note Integration**: Attach and process existing notes in your vault
-- **Secure Communication**: Implements token-based authentication and URL validation
-- **Data Encryption**: Sensitive information is stored with basic encryption
-- **Note Export**: Save AI responses directly to your vault
-- **Multiple File Processing**: Send all notes from a folder to n8n workflow
+- **Chat com IA**: Integração perfeita com serviços de IA através de webhooks personalizáveis
+- **Integração com Notas**: Anexe e processe notas existentes em seu vault
+- **Comunicação Segura**: Implementa autenticação por token e validação de URL
+- **Criptografia de Dados**: Informações sensíveis são armazenadas com criptografia básica
+- **Exportar Notas**: Salve respostas da IA diretamente em seu vault
+- **Processamento de Múltiplos Arquivos**: Envie todas as notas de uma pasta para fluxo de trabalho n8n
 
-## Installation
+## Instalação
 
-1. Open Obsidian Settings
-2. Go to "Community plugins"
-3. Search for "AI Agent for Obsidian"
-4. Install and enable the plugin
+### Instalação Automática (quando disponível na loja oficial)
+1. Abra as Configurações do Obsidian
+2. Vá para "Plugins Comunitários"  
+3. Pesquise por "AI Agent for Obsidian"
+4. Instale e ative o plugin
 
-## Configuration
+### Instalação Manual (versão mais recente - GitHub)
+1. Baixe os arquivos do plugin no GitHub:
+   - Clique em "Code" → "Download ZIP" ou use o Git:
+   - `git clone https://github.com/seu-usuario/ai-agent-obsidian.git`
+2. Extraia os arquivos (se baixou ZIP) para uma pasta temporária
+3. Navegue até a pasta do seu "Vault" do Obsidian
+4. Entre na pasta `.obsidian/plugins/` (crie se não existir)
+5. Crie uma nova pasta chamada `ai-agent-obsidian`
+6. Copie todos os arquivos do plugin (main.js, manifest.json, styles.css) para esta pasta
+7. Abra o Obsidian e vá para Configurações → Plugins Comunitários
+8. Atualize a lista de plugins (botão "Atualizar lista")
+9. Encontre "AI Agent for Obsidian" e habilite-o
 
-1. Open Settings → AI Agent for Obsidian
-2. Enter your n8n webhook URL (HTTPS required)
-3. Set your security token (optional but recommended)
-4. Configure the default save path for notes
+## Configuração
 
-### Security Features
+1. Abra Configurações → AI Agent para Obsidian
+2. Insira sua URL de webhook do n8n (HTTPS obrigatório)
+3. Defina seu token de segurança (opcional mas recomendado)
+4. Configure o caminho padrão para salvar notas
 
-- **HTTPS Only**: Only HTTPS URLs are accepted to ensure secure communication
-- **Private IP Blocking**: Prevents Server-Side Request Forgery (SSRF) by blocking private IP addresses
-- **Token Authentication**: Optional token-based authentication for webhook requests
-- **Data Encryption**: Webhook URLs and tokens are stored with basic encryption
+### Recursos de Segurança
 
-## Usage
+- **Apenas HTTPS**: Apenas URLs HTTPS são aceitas para garantir comunicação segura
+- **Bloqueio de IPs Privados**: Impede Server-Side Request Forgery (SSRF) bloqueando endereços IP privados
+- **Autenticação por Token**: Autenticação opcional por token para requisições de webhook
+- **Criptografia de Dados**: URLs de webhook e tokens são armazenados com criptografia básica
 
-### Basic Chat
+## Uso
 
-1. Open AI Agent for Obsidian from the sidebar
-2. Type your message in the input area
-3. Click send or press Enter (without Shift)
+### Chat Básico
 
-### Process Existing Notes
+1. Abra AI Agent para Obsidian na barra lateral
+2. Digite sua mensagem na área de entrada
+3. Clique em enviar ou pressione Enter (sem Shift)
 
-- Use the paperclip icon to attach the currently active note to your message
-- Right-click on any note in the file explorer and select "Send all notes in this folder to n8n" to process multiple files at once
+### Processar Notas Existentes
 
-### Attach Active Note or Selected Text
+- Use o ícone de clipe de papel para anexar a nota ativa à sua mensagem
+- Clique com botão direito em qualquer nota no explorador de arquivos e selecione "Enviar todas as notas desta pasta para n8n" para processar múltiplos arquivos de uma vez
 
-- Click the paperclip icon to attach the currently active note or selected text
-- Select "Attach active note" or "Attach selected text" from the menu
-- The content will be pre-filled in the input area with instructions placeholder
+### Anexar Nota Ativa ou Texto Selecionado
 
-### Attach Selected Text
+- Clique no ícone de clipe de papel para anexar a nota ativa ou texto selecionado
+- Selecione "Anexar nota ativa" ou "Anexar texto selecionado" no menu
+- O conteúdo será pré-preenchido na área de entrada com espaço para instruções
 
-- Select text in any note
-- Right-click and choose "Send to AI Agent for Obsidian" from context menu
+### Anexar Texto Selecionado
 
-### Export Responses
+- Selecione texto em qualquer nota
+- Clique com botão direito e escolha "Enviar para AI Agent para Obsidian" no menu de contexto
 
-- Right-click on any AI response in the AI Agent for Obsidian chat
-- Select "Save selection as note" to save to your vault
+### Exportar Respostas
 
-### Process Multiple Files
+- Clique com botão direito em qualquer resposta de IA no chat do AI Agent para Obsidian
+- Selecione "Salvar seleção como nota" para salvar em seu vault
 
-- Right-click on any folder in the file explorer
-- Select "Send all notes in this folder to n8n"
+### Processar Múltiplos Arquivos
 
-## Requirements
+- Clique com botão direito em qualquer pasta no explorador de arquivos
+- Selecione "Enviar todas as notas desta pasta para n8n"
 
-- Obsidian version 1.6.0 or higher
-- Access to a webhook endpoint (commonly implemented with n8n, Zapier, or similar)
+## Requisitos
 
-## Security
+- Obsidian versão 1.6.0 ou superior
+- Acesso a um endpoint de webhook (comumente implementado com n8n, Zapier, ou similar)
 
-This plugin implements multiple security measures:
-- Only HTTPS URLs are accepted
-- Private IP addresses are blocked to prevent SSRF
-- Sensitive data is encrypted at rest
-- Optional token-based authentication for webhook requests
+## Segurança
 
-## Troubleshooting
+Este plugin implementa múltiplas medidas de segurança:
+- Apenas URLs HTTPS são aceitas
+- Endereços IP privados são bloqueados para prevenir SSRF
+- Dados sensíveis são criptografados em repouso
+- Autenticação opcional baseada em token para requisições de webhook
 
-- If webhook calls fail, check that your URL uses HTTPS
-- Ensure your endpoint accepts POST requests with JSON payload
-- Verify your security token matches between plugin and endpoint
+## Solução de Problemas
 
-## Support
+- Se chamadas de webhook falharem, verifique se sua URL usa HTTPS
+- Certifique-se de que seu endpoint aceita requisições POST com payload JSON
+- Verifique se seu token de segurança corresponde entre plugin e endpoint
 
-For issues, questions, or feature requests, please open an issue in the repository.
+## Suporte
+
+Para problemas, dúvidas ou solicitações de recursos, por favor abra uma issue no repositório.
